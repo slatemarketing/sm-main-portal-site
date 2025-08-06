@@ -135,6 +135,8 @@ export default function CreateInvoiceDialog({
         console.error("Selected user not found!");
         return;
       }
+
+      // Pass the values object directly (which includes the file)
       await createInvoice(values, selectedUser.name);
       window.location.reload();
       form.reset();

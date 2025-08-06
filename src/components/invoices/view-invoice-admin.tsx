@@ -61,6 +61,9 @@ export function ViewInvoiceAdmin({ id }: { id: string }) {
       try {
         const invoiceData = await getInvoice(id);
         setInvoice(invoiceData);
+        if (!invoice.pdfURL) {
+          throw new Error("Missing PDF URL!");
+        }
       } catch (error) {
         console.error("Error fetching invoice:", error);
       } finally {
@@ -106,7 +109,7 @@ export function ViewInvoiceAdmin({ id }: { id: string }) {
           </div>
           <div className="flex-1 p-6 pt-4">
             <InvoicePDFViewer
-              pdfUrl="/important/invoices/test-invoice.pdf"
+              pdfUrl={invoice.pdfURL!}
               invoiceNumber={invoice.invoiceNumber}
             />
           </div>

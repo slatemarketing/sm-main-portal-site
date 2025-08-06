@@ -2,6 +2,7 @@
 
 import { InvoiceStatus } from "@/generated/prisma";
 import { prisma } from "@/lib/prisma";
+import { uploadFileToS3 } from "@/lib/s3";
 
 export async function getInvoices({ id }: { id?: string } = {}) {
   if (id) {
@@ -31,6 +32,7 @@ interface valuesProps {
   date: Date;
   status: InvoiceStatus;
   paid: boolean;
+  file?: File;
   pdfURL?: string;
   // };
 }
@@ -45,11 +47,29 @@ export async function createInvoice(
     date,
     status,
     paid,
+    file,
     pdfURL,
   }: valuesProps,
   name: string
 ) {
   try {
+    let finalPdfURL = pdfURL;
+
+    // If a file is provided, upload it to S3 first
+    if (file) {
+      // Convert file to buffer
+      const bytes = await file.arrayBuffer();
+      const buffer = Buffer.from(bytes);
+
+      // Upload directly to S3
+      finalPdfURL = await uploadFileToS3(
+        buffer,
+        file.name,
+        file.type,
+        userId
+      );
+    }
+
     await prisma.invoices.create({
       data: {
         title,
@@ -61,7 +81,7 @@ export async function createInvoice(
         date,
         status,
         paid,
-        pdfURL,
+        pdfURL: finalPdfURL,
       },
     });
     return { success: true };
