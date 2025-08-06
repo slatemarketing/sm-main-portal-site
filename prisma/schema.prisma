@@ -17,6 +17,7 @@ datasource db {
 enum UserRole {
   ADMIN
   CLIENT
+  USER
 }
 
 enum InvoiceStatus {
@@ -33,7 +34,7 @@ model User {
   email         String
   emailVerified Boolean
   image         String?
-  role          UserRole   @default(CLIENT)
+  role          UserRole   @default(USER)
   createdAt     DateTime
   updatedAt     DateTime
   sessions      Session[]
@@ -41,8 +42,78 @@ model User {
   profile       Profile?
   invoices      Invoices[]
 
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: SetNull)
+
   @@unique([email])
   @@map("user")
+}
+
+model Company {
+  id      String  @id @default(cuid())
+  name    String
+  email   String?
+  phone   String?
+  website String?
+
+  billingAddress String?
+  billingCity    String?
+  billingState   String?
+  billingZip     String?
+  billingCountry String? @default("USA")
+
+  industry    String?
+  description String?
+  taxId       String?
+
+  users    User[]
+  invoices Invoices[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("company")
+}
+
+model Profile {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  firstName String?
+  lastName  String?
+  company   String?
+  phone     String?
+  bio       String?
+  avatar    String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Invoices {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: SetNull)
+
+  title         String
+  name          String
+  invoiceNumber Int       @default(autoincrement())
+  InvoiceId     String    @default(cuid())
+  amount        String?
+  date          DateTime?
+  email         String?
+
+  pdfURL String?
+
+  status InvoiceStatus @default(PENDING)
+  paid   Boolean       @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Session {
@@ -88,43 +159,4 @@ model Verification {
   updatedAt  DateTime?
 
   @@map("verification")
-}
-
-model Profile {
-  id     String @id @default(cuid())
-  userId String @unique
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  firstName String?
-  lastName  String?
-  company   String?
-  phone     String?
-  bio       String?
-  avatar    String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Invoices {
-  id     String @id @default(cuid())
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  title         String
-  name          String
-  invoiceNumber Int       @default(autoincrement())
-  InvoiceId     String    @default(cuid())
-  company       String?
-  amount        String?
-  date          DateTime?
-  email         String?
-
-  pdfURL String?
-
-  status InvoiceStatus @default(PENDING)
-  paid   Boolean       @default(false)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 }
