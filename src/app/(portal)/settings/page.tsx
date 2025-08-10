@@ -15,18 +15,14 @@ export default async function SettingsPage() {
   const user = session.user;
   const userIsAdmin = user && "role" in user && user.role === "ADMIN";
 
-  if (!userIsAdmin) {
-    redirect("/dashboard");
-  }
-
   return (
     <>
       <AdminPortalLayout>
         <div className="space-y-6">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Admin Panel</h1>
+            <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
             <p className="text-muted-foreground">
-              View all admin functions easily, and key metrics.
+              Configure settings for your company, user, and portal.
             </p>
           </div>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">

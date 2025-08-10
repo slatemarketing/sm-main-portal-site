@@ -1,28 +1,36 @@
-import { LogOutButton } from "@/components/auth/log-out-button";
-import { Card, CardContent } from "@/components/ui/card";
+import { AdminPortalLayout } from "@/components/layout/portal-layout";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
-export default async function DashboardPage() {
+export default async function SettingsPage() {
   const session = await auth.api.getSession({
     headers: await headers(),
   });
 
   if (!session) {
-    redirect("/signin");
+    redirect("/auth/signin");
   }
 
+  const user = session.user;
+  const userIsAdmin = user && "role" in user && user.role === "ADMIN";
+
   return (
-    <div className="grid h-screen place-items-center space-y-2">
-      <Card>
-        <CardContent className="space-y-3 flex flex-col items-center">
-          <h1 className="text-xl font-semibold">
-            Welcome Back, {session.user.name}!
-          </h1>
-          <LogOutButton />
-        </CardContent>
-      </Card>
-    </div>
+    <>
+      <AdminPortalLayout>
+        <div className="space-y-6">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+            <p className="text-muted-foreground">
+              See all needed statistics, cost analysis, and more in a
+              easy-to-navigate view.
+            </p>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            Coming Soon
+          </div>
+        </div>
+      </AdminPortalLayout>
+    </>
   );
 }

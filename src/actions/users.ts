@@ -59,3 +59,33 @@ export async function getUsers() {
     },
   });
 }
+
+export async function getUsersNoCompany() {
+  return await prisma.user.findMany({
+    where: {
+      companyId: null,
+    },
+  });
+}
+
+export async function addUserToCompany(userId: string, companyId: string) {
+  return await prisma.user.update({
+    where: {
+      id: userId,
+    },
+    data: {
+      companyId: companyId,
+    },
+  });
+}
+
+export async function removeUserFromCompany(userId: string) {
+  return await prisma.user.update({
+    where: {
+      id: userId,
+    },
+    data: {
+      companyId: null,
+    },
+  });
+}

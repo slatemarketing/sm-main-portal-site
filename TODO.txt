@@ -3,3 +3,5 @@
     - Have PDF invoice generation
         - Generate invoice PDF based on answers when creating invoice
         - Goes into S3, and URL is generated, and showed per invoice page
+
+When company gets marked as "INACTIVE", all company data gets automatically backed up into the SM server, if not available into cloud or doesn't work. Once company is deleted, data will be stored for 14 days, and then deleted permanently.

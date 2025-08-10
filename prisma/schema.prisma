@@ -27,22 +27,10 @@ enum InvoiceStatus {
   REPORTED
 }
 
-model User {
-  id            String     @id
-  name          String
-  email         String
-  emailVerified Boolean
-  image         String?
-  role          UserRole   @default(CLIENT)
-  createdAt     DateTime
-  updatedAt     DateTime
-  sessions      Session[]
-  accounts      Account[]
-  profile       Profile?
-  invoices      Invoices[]
-
-  @@unique([email])
-  @@map("user")
+enum CompanyStatus {
+  PENDING
+  ACTIVE
+  INACTIVE
 }
 
 model Session {
@@ -88,6 +76,59 @@ model Verification {
   updatedAt  DateTime?
 
   @@map("verification")
+}
+
+model User {
+  id            String     @id
+  name          String
+  email         String
+  emailVerified Boolean
+  image         String?
+  role          UserRole   @default(CLIENT)
+  createdAt     DateTime
+  updatedAt     DateTime
+  sessions      Session[]
+  accounts      Account[]
+  profile       Profile?
+  invoices      Invoices[]
+  companyId     String?
+  company       Company?   @relation(fields: [companyId], references: [id])
+
+  @@unique([email])
+  @@map("user")
+}
+
+model Company {
+  id            String @id @default(cuid())
+  companyNumber Int    @default(autoincrement())
+
+  name        String
+  description String?
+  logo        String?
+  email       String
+  phone       String?
+  status      CompanyStatus @default(PENDING)
+
+  address    String
+  city       String
+  state      String?
+  postalCode String
+  country    String  @default("USA")
+
+  billingEmail      String?
+  billingAddress    String?
+  billingCity       String?
+  billingState      String?
+  billingPostalCode String?
+  billingCountry    String  @default("USA")
+  taxId             String?
+
+  users User[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("company")
 }
 
 model Profile {
