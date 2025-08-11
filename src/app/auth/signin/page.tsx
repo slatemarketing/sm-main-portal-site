@@ -20,6 +20,8 @@ export default async function SignUpPage() {
     redirect("/dashboard");
   }
 
+  // Rendered information
+
   return (
     <div className="grid h-screen place-items-center">
       <SignInForm />
