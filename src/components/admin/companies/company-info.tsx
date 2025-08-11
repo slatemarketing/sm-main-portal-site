@@ -39,7 +39,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useState } from "react";
-import { deleteCompany } from "@/actions/companies";
+import { deleteCompany, exportCompanyToUser } from "@/actions/companies";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import {
@@ -57,7 +57,6 @@ import {
   removeUserFromCompany,
 } from "@/actions/users";
 import { Input } from "@/components/ui/input";
-import { error } from "console";
 
 interface CompanyInfoProps {
   company: Company & { users: any[] };
@@ -279,6 +278,27 @@ export function CompanyInfoSettingsTab({ company }: CompanyInfoProps) {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [confirmationText, setConfirmationText] = useState("");
 
+  const handleExportToUser = async () => {
+    try {
+      const exportResult = await exportCompanyToUser(company.id);
+      
+      const blob = new Blob([exportResult.data], { type: exportResult.mimeType });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = exportResult.fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      toast.success("Company data exported successfully!");
+    } catch (error) {
+      toast.error("Failed to export company data");
+      console.error("Export error:", error);
+    }
+  };
+
   const handleDialogChange = (open: boolean) => {
     setConfirmOpen(open);
     if (!open) {
@@ -316,25 +336,68 @@ export function CompanyInfoSettingsTab({ company }: CompanyInfoProps) {
 
   return (
     <>
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-destructive">Danger Zone</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between p-4 border border-destructive/20 rounded-lg">
-            <div>
-              <h3 className="font-medium">Delete Company</h3>
-              <p className="text-sm text-muted-foreground">
-                Permanently delete this company and all associated data. This
-                action cannot be undone.
-              </p>
+      <div>
+        <Card>
+          <CardContent className="space-y-4">
+            <div className="space-y-3">
+              <div className="space-y-2">
+                {/* DATA GROUP */}
+                <div>
+                  <h1 className="font-semibold text-primary">Data</h1>
+                </div>
+                <div className="flex items-center justify-between p-4 border border-primary/20 rounded-lg">
+                  <div>
+                    <h3 className="font-medium">Export Company</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Export all company data
+                    </p>
+                  </div>
+                  <Button onClick={handleExportToUser}>
+                    Export Company
+                  </Button>
+                </div>
+                <div className="flex items-center justify-between p-4 border border-primary/20 rounded-lg">
+                  <div>
+                    <h3 className="font-medium">Backup Company</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Backup all company data into a secure Slate Marketing
+                      location
+                    </p>
+                  </div>
+                  <Button
+                    onClick={() => toast.error("Not currently available.")}
+                  >
+                    Backup Company
+                  </Button>
+                </div>
+              </div>
+              <div className="space-y-2">
+                {/* DANGER ZONE GROUP */}
+                <div>
+                  <h1 className="font-semibold text-destructive">
+                    Danger Zone
+                  </h1>
+                </div>
+                <div className="flex items-center justify-between p-4 border border-destructive/20 rounded-lg">
+                  <div>
+                    <h3 className="font-medium">Delete Company</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Permanently delete this company and all associated data.
+                      This action cannot be undone.
+                    </p>
+                  </div>
+                  <Button
+                    variant="destructive"
+                    onClick={() => setConfirmOpen(true)}
+                  >
+                    Delete Company
+                  </Button>
+                </div>
+              </div>
             </div>
-            <Button variant="destructive" onClick={() => setConfirmOpen(true)}>
-              Delete Company
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Delete Confirm Dialog */}
       <Dialog open={confirmOpen} onOpenChange={handleDialogChange}>

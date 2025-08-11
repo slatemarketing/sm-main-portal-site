@@ -2,6 +2,7 @@
 
 import { CompanyStatus } from "@/generated/prisma";
 import { prisma } from "@/lib/prisma";
+import fs from "fs";
 
 export async function getCompanies() {
   return await prisma.company.findMany({
@@ -196,4 +197,73 @@ export async function updateCompanyStatus(id: string, status: CompanyStatus) {
     console.error("Database error:", error);
     throw new Error("Failed to update company status!");
   }
+}
+
+export async function exportCompany(companyId: string) {
+  const company = await prisma.company.findUnique({
+    where: { id: companyId },
+    include: { users: true },
+  });
+  const data = await prisma.company.findUnique({
+    where: { id: companyId },
+    include: { users: true },
+  });
+  fs.writeFileSync(
+    `${company!.id}-DATA-${new Date()}.json`,
+    JSON.stringify(data, null, 2)
+  );
+}
+
+export async function exportCompanyToUser(companyId: string) {
+  const company = await prisma.company.findUnique({
+    where: { id: companyId },
+    include: { 
+      users: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+          emailVerified: true,
+          profile: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      },
+    },
+  });
+
+  if (!company) {
+    throw new Error("Company not found");
+  }
+
+  const exportData = {
+    company: {
+      id: company.id,
+      name: company.name,
+      description: company.description,
+      email: company.email,
+      phone: company.phone,
+      status: company.status,
+      address: company.address,
+      city: company.city,
+      state: company.state,
+      postalCode: company.postalCode,
+      country: company.country,
+      createdAt: company.createdAt,
+      updatedAt: company.updatedAt,
+    },
+    users: company.users,
+    exportDate: new Date().toISOString(),
+    totalUsers: company.users.length,
+  };
+
+  const fileName = `${company.name.replace(/[^a-zA-Z0-9]/g, '_')}_export_${new Date().toISOString().split('T')[0]}.json`;
+  const jsonData = JSON.stringify(exportData, null, 2);
+
+  return {
+    fileName,
+    data: jsonData,
+    mimeType: 'application/json',
+  };
 }

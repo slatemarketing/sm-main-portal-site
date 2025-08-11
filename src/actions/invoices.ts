@@ -62,12 +62,7 @@ export async function createInvoice(
       const buffer = Buffer.from(bytes);
 
       // Upload directly to S3
-      finalPdfURL = await uploadFileToS3(
-        buffer,
-        file.name,
-        file.type,
-        userId
-      );
+      finalPdfURL = await uploadFileToS3(buffer, file.name, file.type, userId);
     }
 
     await prisma.invoices.create({
