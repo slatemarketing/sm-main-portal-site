@@ -57,6 +57,7 @@ import {
   removeUserFromCompany,
 } from "@/actions/users";
 import { Input } from "@/components/ui/input";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface CompanyInfoProps {
   company: Company & { users: any[] };
@@ -167,7 +168,15 @@ export function CompanyInfoUsersTab({
             <TableBody>
               {company.users.map((user) => (
                 <TableRow key={user.id}>
-                  <TableCell className="font-medium">{user.name}</TableCell>
+                  <TableCell className="font-medium">
+                    <div className="flex items-center w-8 h-8 gap-1 w-full">
+                      <Avatar className="w-6 h-6">
+                        <AvatarImage src={user.profile.avatar || ""} />
+                        <AvatarFallback></AvatarFallback>
+                      </Avatar>
+                      {user.name}
+                    </div>
+                  </TableCell>
                   <TableCell>{user.email}</TableCell>
                   <TableCell>
                     <Badge
@@ -201,11 +210,11 @@ export function CompanyInfoUsersTab({
                           className="text-destructive"
                           onClick={() => {
                             removeUserFromCompany(user.id);
-                            router.push(
-                              `/admin/companies/${company.id}?tab=users`
-                            );
                             toast.success(
                               `User removed successfully from ${company.name}`
+                            );
+                            router.push(
+                              `/admin/companies/${company.id}?tab=users`
                             );
                           }}
                         >
@@ -241,7 +250,13 @@ export function CompanyInfoUsersTab({
                   <SelectLabel>Available Users</SelectLabel>
                   {availableUsers?.map((availableUser) => (
                     <SelectItem key={availableUser.id} value={availableUser.id}>
-                      {availableUser.name} - {availableUser.email}
+                      <div className="flex items-center gap-1">
+                        <Avatar className="w-6 h-6">
+                          <AvatarImage src={availableUser.image || ""} />
+                          <AvatarFallback></AvatarFallback>
+                        </Avatar>
+                        {availableUser.name} - {availableUser.email}
+                      </div>
                     </SelectItem>
                   ))}
                 </SelectGroup>
@@ -275,23 +290,47 @@ export function CompanyInfoSettingsTab({ company }: CompanyInfoProps) {
   const router = useRouter();
 
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [companyDataOpen, setCompanyDataOpen] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [backupLoading, setBackupLoading] = useState(false);
   const [confirmationText, setConfirmationText] = useState("");
+
+  async function handleCompanyBackup() {
+    setBackupLoading(true);
+
+    try {
+      const body = company;
+
+      const res = await fetch("/api/upload-company-json", {
+        method: "POST",
+        headers: { "Conetent-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      toast.success("Company Backed Up!");
+    } catch (error) {
+      console.log("Error while backing up:", error);
+      toast.error("Error backing up company! Please try again.");
+    } finally {
+      setBackupLoading(false);
+    }
+  }
 
   const handleExportToUser = async () => {
     try {
       const exportResult = await exportCompanyToUser(company.id);
-      
-      const blob = new Blob([exportResult.data], { type: exportResult.mimeType });
+
+      const blob = new Blob([exportResult.data], {
+        type: exportResult.mimeType,
+      });
       const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = url;
       link.download = exportResult.fileName;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
-      
+
       toast.success("Company data exported successfully!");
     } catch (error) {
       toast.error("Failed to export company data");
@@ -311,6 +350,25 @@ export function CompanyInfoSettingsTab({ company }: CompanyInfoProps) {
 
     try {
       await deleteCompany(id);
+
+      try {
+        const body = company;
+
+        const res = await fetch(
+          "/api/upload-company-json?remove-company=true",
+          {
+            method: "POST",
+            headers: { "Conetent-Type": "application/json" },
+            body: JSON.stringify(body),
+          }
+        );
+
+        toast.success("Company Backed Up!"); // REMOVE LATER
+      } catch (error) {
+        console.log("Error backing up company:", error);
+        toast.error("Error while backing up");
+      }
+
       router.push("/admin/companies");
       toast.success("Company Deleted!");
       setConfirmOpen(false);
@@ -343,8 +401,40 @@ export function CompanyInfoSettingsTab({ company }: CompanyInfoProps) {
               <div className="space-y-2">
                 {/* DATA GROUP */}
                 <div>
+                  {/* TITLE */}
                   <h1 className="font-semibold text-primary">Data</h1>
                 </div>
+                {/* GROUP CARDS */}
+                <div className="flex items-center justify-between p-4 border border-primary/20 rounded-lg">
+                  <div>
+                    <h3 className="font-medium">View Company Data</h3>
+                    <p className="text-sm text-muted-foreground">
+                      View all company and user data
+                    </p>
+                  </div>
+                  <Button onClick={() => setCompanyDataOpen(true)}>
+                    View Company
+                  </Button>
+                  {/* COMPANY DATA DIALOG */}
+                  <Dialog
+                    open={companyDataOpen}
+                    onOpenChange={setCompanyDataOpen}
+                  >
+                    <DialogContent className="w-1/2">
+                      <DialogHeader>
+                        <DialogTitle>
+                          Data Overview - {company.name}
+                        </DialogTitle>
+                      </DialogHeader>
+                      <div className="max-h-96 w-full overflow-auto">
+                        <pre className="bg-gray-900 text-green-400 p-4 rounded-md text-sm font-mono whitespace-pre-wrap">
+                          {JSON.stringify(company, null, 2)}
+                        </pre>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+
                 <div className="flex items-center justify-between p-4 border border-primary/20 rounded-lg">
                   <div>
                     <h3 className="font-medium">Export Company</h3>
@@ -352,10 +442,9 @@ export function CompanyInfoSettingsTab({ company }: CompanyInfoProps) {
                       Export all company data
                     </p>
                   </div>
-                  <Button onClick={handleExportToUser}>
-                    Export Company
-                  </Button>
+                  <Button onClick={handleExportToUser}>Export Company</Button>
                 </div>
+
                 <div className="flex items-center justify-between p-4 border border-primary/20 rounded-lg">
                   <div>
                     <h3 className="font-medium">Backup Company</h3>
@@ -365,25 +454,36 @@ export function CompanyInfoSettingsTab({ company }: CompanyInfoProps) {
                     </p>
                   </div>
                   <Button
-                    onClick={() => toast.error("Not currently available.")}
+                    // onClick={() => toast.error("Not currently available.")}
+                    onClick={handleCompanyBackup}
+                    disabled={backupLoading}
                   >
-                    Backup Company
+                    {backupLoading ? (
+                      <div className="flex items-center gap-1">
+                        <Loader2 className="animate-spin" />
+                        <span>Backing Up</span>
+                      </div>
+                    ) : (
+                      "Backup Company"
+                    )}
                   </Button>
                 </div>
               </div>
               <div className="space-y-2">
                 {/* DANGER ZONE GROUP */}
                 <div>
+                  {/* TITLE */}
                   <h1 className="font-semibold text-destructive">
                     Danger Zone
                   </h1>
                 </div>
+                {/* GROUP CARDS */}
                 <div className="flex items-center justify-between p-4 border border-destructive/20 rounded-lg">
                   <div>
                     <h3 className="font-medium">Delete Company</h3>
                     <p className="text-sm text-muted-foreground">
                       Permanently delete this company and all associated data.
-                      This action cannot be undone.
+                      This action has 14 days to be undone.
                     </p>
                   </div>
                   <Button
@@ -412,7 +512,6 @@ export function CompanyInfoSettingsTab({ company }: CompanyInfoProps) {
               company, all of its data and user connections
             </p>
             <p>"{company.name}"</p>
-            <p>This action cannot be undone.</p>
           </div>
           <Input
             placeholder="Type 'Permanently Delete' to delete this company."
@@ -435,6 +534,10 @@ export function CompanyInfoSettingsTab({ company }: CompanyInfoProps) {
               "Delete"
             )}
           </Button>
+          <p className="text-sm text-muted-foreground">
+            There is a 14-day period until all data is deleted{" "}
+            <span className="font-bold">permanently.</span>
+          </p>
         </DialogContent>
       </Dialog>
     </>

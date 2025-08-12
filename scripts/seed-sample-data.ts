@@ -1,4 +1,6 @@
 import { PrismaClient, CompanyStatus, UserRole } from "@/generated/prisma";
+import { auth } from "@/lib/auth";
+import { hashPassword } from "better-auth/crypto";
 
 const prisma = new PrismaClient();
 
@@ -249,6 +251,15 @@ function generateUserEmail(
   return `${firstName.toLowerCase()}.${lastName.toLowerCase()}@${domain}`;
 }
 
+function generateGenericUserEmail(
+  firstName: string,
+  lastName: string
+): string {
+  const domains = ['gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com', 'protonmail.com'];
+  const domain = getRandomElement(domains);
+  return `${firstName.toLowerCase()}.${lastName.toLowerCase()}@${domain}`;
+}
+
 function generateAddress(): string {
   const streetNumber = getRandomInt(100, 9999);
   const streetNames = [
@@ -262,6 +273,133 @@ function generateAddress(): string {
     "Maple Ave",
   ];
   return `${streetNumber} ${getRandomElement(streetNames)}`;
+}
+
+async function createSlateMarketing() {
+  console.log("Generating SLATE MARKETING as a company, if not already found");
+
+  const slateMarketing = await prisma.company.findUnique({
+    where: { id: process.env.SM_COMPANY_ID },
+  });
+
+  if (slateMarketing) {
+    console.log("SLATE MARKETING ALREADY A COMPANY. SKIPPING GENERATION");
+    return;
+  }
+
+  console.log("Generating SM Company");
+
+  const company = await prisma.company.create({
+    data: {
+      id: process.env.SM_COMPANY_ID,
+      name: "Slate Marketing",
+      description: "The Marketing Agency who created this.",
+      logo: `https://ui.avatars.com/api/?name=${encodeURIComponent(
+        "Slate Marketing"
+      )}`,
+      email: "admin@slatemarketing.org",
+      phone: "+13134827898",
+      status: "ACTIVE",
+      address: "347 Neff Rd",
+      city: "Grosse Pointe",
+      state: "MI",
+      postalCode: "48230",
+      country: "USA",
+      billingEmail: "billing@slatemarketing.org",
+      billingAddress: "347 Neff Rd",
+      billingCity: "Grosse Pointe",
+      billingState: "MI",
+      billingPostalCode: "48230",
+      billingCountry: "USA",
+      taxId: null,
+    },
+  });
+
+  console.log("Generated SM Company");
+
+  // Create Users
+
+  console.log("Generating SM Users");
+  const slateUsers = [
+    {
+      name: "Nicholas Walsh",
+      email: "nickw@slatemarketing.org",
+      password: "N!cholas0821",
+    },
+    {
+      name: "Arieh Zeitlin",
+      email: "ariz@slatemarketing.org",
+      password: "N!cholas0821",
+    },
+    {
+      name: "Support Marketing",
+      email: "support@slatemarketing.org",
+      password: "N!cholas0821",
+    },
+  ];
+
+  for (let i = 0; i < slateUsers.length; i++) {
+    const userData = slateUsers[i];
+    const hashedPassword = await hashPassword(userData.password);
+
+    // Check if user already exists
+    const existingUser = await prisma.user.findUnique({
+      where: { email: userData.email },
+    });
+
+    if (existingUser) {
+      console.log(`User ${userData.email} already exists, skipping`);
+      continue;
+    }
+
+    const user = await prisma.user.create({
+      data: {
+        id: `sm_user_${i}`,
+        name: userData.name,
+        email: userData.email,
+        emailVerified: true,
+        role: UserRole.ADMIN,
+        companyId: company.id,
+        image: `https://ui-avatars.com/api/?name=${encodeURIComponent(
+          userData.name
+        )}&background=random`,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    });
+
+    // Create account with hashed password
+    await prisma.account.create({
+      data: {
+        id: `account_${user.id}`,
+        userId: user.id,
+        accountId: user.email,
+        providerId: "credential",
+        password: hashedPassword,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    });
+
+    // Create profile
+    const [firstName, ...lastNameParts] = userData.name.split(" ");
+    const lastName = lastNameParts.join(" ");
+
+    await prisma.profile.create({
+      data: {
+        userId: user.id,
+        firstName: firstName,
+        lastName: lastName,
+        company: company.name,
+        phone: "+13134827898",
+        bio: `${firstName} is a key member of the Slate Marketing team.`,
+        avatar: user.image,
+      },
+    });
+
+    console.log(`Created SM user: ${user.name}`);
+  }
+  console.log("Generated SM Users");
 }
 
 async function createCompanies() {
@@ -319,22 +457,24 @@ async function createCompanies() {
 }
 
 async function createUsers(companies: any[]) {
-  console.log("Creating 55 sample users...");
+  console.log("Creating 80 sample users...");
 
   const users = [];
   let userCount = 0;
+  const defaultPassword = await hashPassword("password123"); // Default password for seeded users
 
   // Ensure each company has at least 1 user
   for (const company of companies) {
     const firstName = getRandomElement(firstNames);
     const lastName = getRandomElement(lastNames);
     const domain = company.email.split("@")[1];
+    const email = generateUserEmail(firstName, lastName, domain);
 
     const user = await prisma.user.create({
       data: {
         id: `user_${Date.now()}_${userCount}`,
         name: `${firstName} ${lastName}`,
-        email: generateUserEmail(firstName, lastName, domain),
+        email: email,
         emailVerified: Math.random() > 0.3, // 70% chance of being verified
         image: `https://ui-avatars.com/api/?name=${encodeURIComponent(
           firstName + " " + lastName
@@ -344,6 +484,19 @@ async function createUsers(companies: any[]) {
         createdAt: new Date(
           Date.now() - getRandomInt(1, 365) * 24 * 60 * 60 * 1000
         ), // Random date in last year
+        updatedAt: new Date(),
+      },
+    });
+
+    // Create account with password
+    await prisma.account.create({
+      data: {
+        id: `account_${user.id}`,
+        userId: user.id,
+        accountId: email,
+        providerId: "credential",
+        password: defaultPassword,
+        createdAt: new Date(),
         updatedAt: new Date(),
       },
     });
@@ -369,19 +522,23 @@ async function createUsers(companies: any[]) {
     console.log(`Created user: ${user.name} at ${company.name}`);
   }
 
-  // Create remaining 30 users distributed across companies
-  const remainingUsers = 55 - 25;
-  for (let i = 0; i < remainingUsers; i++) {
+  // Create remaining users (40 with companies, 15 without companies)
+  const remainingUsersWithCompany = 40;
+  const usersWithoutCompany = 15;
+  
+  // Create 40 more users with companies
+  for (let i = 0; i < remainingUsersWithCompany; i++) {
     const company = getRandomElement(companies);
     const firstName = getRandomElement(firstNames);
     const lastName = getRandomElement(lastNames);
     const domain = company.email.split("@")[1];
+    const email = generateUserEmail(firstName, lastName, domain);
 
     const user = await prisma.user.create({
       data: {
         id: `user_${Date.now()}_${userCount}`,
         name: `${firstName} ${lastName}`,
-        email: generateUserEmail(firstName, lastName, domain),
+        email: email,
         emailVerified: Math.random() > 0.3,
         image: `https://ui-avatars.com/api/?name=${encodeURIComponent(
           firstName + " " + lastName
@@ -391,6 +548,19 @@ async function createUsers(companies: any[]) {
         createdAt: new Date(
           Date.now() - getRandomInt(1, 365) * 24 * 60 * 60 * 1000
         ),
+        updatedAt: new Date(),
+      },
+    });
+
+    // Create account with password
+    await prisma.account.create({
+      data: {
+        id: `account_${user.id}`,
+        userId: user.id,
+        accountId: email,
+        providerId: "credential",
+        password: defaultPassword,
+        createdAt: new Date(),
         updatedAt: new Date(),
       },
     });
@@ -416,6 +586,64 @@ async function createUsers(companies: any[]) {
     console.log(`Created user: ${user.name} at ${company.name}`);
   }
 
+  // Create 15 users without companies
+  for (let i = 0; i < usersWithoutCompany; i++) {
+    const firstName = getRandomElement(firstNames);
+    const lastName = getRandomElement(lastNames);
+    const email = generateGenericUserEmail(firstName, lastName);
+
+    const user = await prisma.user.create({
+      data: {
+        id: `user_${Date.now()}_${userCount}`,
+        name: `${firstName} ${lastName}`,
+        email: email,
+        emailVerified: Math.random() > 0.3,
+        image: `https://ui-avatars.com/api/?name=${encodeURIComponent(
+          firstName + " " + lastName
+        )}&background=random`,
+        role: UserRole.CLIENT, // Independent users are clients
+        companyId: null, // No company
+        createdAt: new Date(
+          Date.now() - getRandomInt(1, 365) * 24 * 60 * 60 * 1000
+        ),
+        updatedAt: new Date(),
+      },
+    });
+
+    // Create account with password
+    await prisma.account.create({
+      data: {
+        id: `account_${user.id}`,
+        userId: user.id,
+        accountId: email,
+        providerId: "credential",
+        password: defaultPassword,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    });
+
+    // Create profile for user (no company info)
+    await prisma.profile.create({
+      data: {
+        userId: user.id,
+        firstName: firstName,
+        lastName: lastName,
+        company: null, // No company
+        phone: `+1 (${getRandomInt(200, 999)}) ${getRandomInt(
+          200,
+          999
+        )}-${getRandomInt(1000, 9999)}`,
+        bio: `${firstName} is an independent professional.`,
+        avatar: user.image,
+      },
+    });
+
+    users.push(user);
+    userCount++;
+    console.log(`Created independent user: ${user.name}`);
+  }
+
   return users;
 }
 
@@ -423,6 +651,10 @@ async function main() {
   console.log("Starting database seeding...");
 
   try {
+    // Create Slate Marketing
+    await createSlateMarketing();
+    console.log("Slate Marketing Generated!");
+
     // Create companies first
     const companies = await createCompanies();
 

@@ -123,6 +123,8 @@ model Company {
   billingCountry    String  @default("USA")
   taxId             String?
 
+  backupDate DateTime?
+
   users User[]
 
   createdAt DateTime @default(now())
