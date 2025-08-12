@@ -20,13 +20,16 @@ export async function POST(req: NextRequest) {
 
   const removeCompany = searchParams.get("remove-company");
 
-  let key = `incoming/${data.name}-${Date.now().toString()}.json`;
+  let key = `incoming/${data.name}/${data.name}-${Date.now().toString()}.json`;
 
   if (removeCompany) {
-    key = `incoming/removed-companies/${
+    key = `incoming/${data.name}/DELETION/${
       data.name
     }-${Date.now().toString()}.json`;
+    console.log("BACKUP TYPE: REMOVAL");
   }
+
+  console.log("STARTING OpenAI");
 
   const ai = await openai.responses.create({
     model: "gpt-5-nano",
@@ -40,6 +43,8 @@ export async function POST(req: NextRequest) {
     ],
   });
 
+  console.log("FINISHED OpenAI");
+
   const aiResponse = JSON.parse(
     ai.output_text || '{"summary": "", "topic": ""}'
   );
@@ -48,6 +53,8 @@ export async function POST(req: NextRequest) {
     summary: aiResponse.summary,
     topic: aiResponse.topic,
   };
+
+  console.log("SENDING TO S3");
 
   await s3.send(
     new PutObjectCommand({

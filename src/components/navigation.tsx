@@ -32,10 +32,11 @@ import { LogOutButton } from "./auth/log-out-button";
 
 // Define the navigation items with their paths and labels
 const navigationItems = [
-  { href: "/", label: "Home" },
-  { href: "/about", label: "Who We Are" },
-  { href: "/features", label: "Features" },
-  { href: "/contact", label: "Contact" },
+  // { href: "/", label: "Home" },
+  // { href: "/about", label: "Who We Are" },
+  // { href: "/features", label: "Features" },
+  // { href: "/contact", label: "Contact" },
+  { href: "", label: "" },
 ];
 
 const portalNavItems = [
@@ -103,7 +104,7 @@ export function Navigation() {
               alt="Slate Marketing"
               width={32}
               height={32}
-              className="h-8 w-8"
+              className="h-10 w-10"
             />
             <span className="text-xl font-bold bg-gradient-to-r from-primary to-chart-1 bg-clip-text text-transparent">
               Slate Marketing

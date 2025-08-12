@@ -169,7 +169,7 @@ export function CompanyInfoUsersTab({
               {company.users.map((user) => (
                 <TableRow key={user.id}>
                   <TableCell className="font-medium">
-                    <div className="flex items-center w-8 h-8 gap-1 w-full">
+                    <div className="flex items-center w-full gap-2">
                       <Avatar className="w-6 h-6">
                         <AvatarImage src={user.profile.avatar || ""} />
                         <AvatarFallback></AvatarFallback>
@@ -508,22 +508,20 @@ export function CompanyInfoSettingsTab({ company }: CompanyInfoProps) {
           <div className="space-y-2">
             <p>
               Are you sure you would like to{" "}
-              <span className="font-semibold">permanently delete</span> this
-              company, all of its data and user connections
+              <span className="font-semibold">DELETE</span> this company, all of
+              its data and user connections
             </p>
             <p>"{company.name}"</p>
           </div>
           <Input
-            placeholder="Type 'Permanently Delete' to delete this company."
+            placeholder="Type 'DELETE' to delete this company."
             value={confirmationText}
             onChange={(e) => setConfirmationText(e.target.value)}
           />
           <Button
             variant="destructive"
             onClick={() => handleCompanyDelete(company.id)}
-            disabled={
-              confirmationText !== "Permanently Delete" || deleteLoading
-            }
+            disabled={confirmationText !== "DELETE" || deleteLoading}
           >
             {deleteLoading ? (
               <div className="flex gap-1 items-center">

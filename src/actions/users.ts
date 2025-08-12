@@ -56,6 +56,17 @@ export async function getUsers() {
   return await prisma.user.findMany({
     include: {
       profile: true,
+      company: true,
+    },
+  });
+}
+
+export async function getUser(id: string) {
+  return await prisma.user.findUnique({
+    where: { id },
+    include: {
+      company: true,
+      profile: true,
     },
   });
 }
@@ -86,6 +97,17 @@ export async function removeUserFromCompany(userId: string) {
     },
     data: {
       companyId: null,
+    },
+  });
+}
+
+export async function updateUserRole(userId: string, role: "ADMIN" | "CLIENT") {
+  return await prisma.user.update({
+    where: {
+      id: userId,
+    },
+    data: {
+      role: role,
     },
   });
 }

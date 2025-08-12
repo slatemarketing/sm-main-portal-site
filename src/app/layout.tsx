@@ -5,6 +5,7 @@ import { Navigation } from "@/components/navigation";
 import { Toaster } from "sonner";
 import { AuthProvider } from "@/components/auth/auth-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import Footer from "@/components/footer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -36,6 +37,7 @@ export default function RootLayout({
             <Toaster />
             <Navigation />
             <main>{children}</main>
+            <Footer />
           </AuthProvider>
         </TooltipProvider>
       </body>

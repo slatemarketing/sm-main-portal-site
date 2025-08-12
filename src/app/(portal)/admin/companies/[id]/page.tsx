@@ -57,9 +57,10 @@ export default async function InvoiceIdPage({
   searchParams,
 }: CompanyPageProps) {
   const { id } = await params;
+  const { tab } = await searchParams;
   const company = await getCompany(id);
 
-  const activeTab = searchParams.tab || "overview";
+  const activeTab = tab || "overview";
 
   const [allUsers, availableUsers] = await Promise.all([
     getUsers(),
