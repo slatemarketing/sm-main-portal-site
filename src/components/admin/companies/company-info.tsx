@@ -301,7 +301,7 @@ export function CompanyInfoSettingsTab({ company }: CompanyInfoProps) {
     try {
       const body = company;
 
-      const res = await fetch("/api/upload-company-json", {
+      const res = await fetch("/api/upload/company", {
         method: "POST",
         headers: { "Conetent-Type": "application/json" },
         body: JSON.stringify(body),

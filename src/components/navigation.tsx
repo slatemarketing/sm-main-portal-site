@@ -19,7 +19,6 @@ import {
   ChartColumn,
   CircleUser,
   FileText,
-  Icon,
   LogIn,
   LogOut,
   Settings,
@@ -27,16 +26,13 @@ import {
 import { authClient } from "@/lib/auth-client";
 import { useSessionWithProfile } from "@/hooks/use-session-with-profile";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { isAdmin } from "@/lib/roles";
-import { LogOutButton } from "./auth/log-out-button";
 
 // Define the navigation items with their paths and labels
 const navigationItems = [
-  // { href: "/", label: "Home" },
-  // { href: "/about", label: "Who We Are" },
-  // { href: "/features", label: "Features" },
-  // { href: "/contact", label: "Contact" },
-  { href: "", label: "" },
+  { href: "/", label: "Home" },
+  { href: "/about", label: "Who We Are" },
+  { href: "/features", label: "Features" },
+  { href: "/contact", label: "Contact" },
 ];
 
 const portalNavItems = [
@@ -112,7 +108,7 @@ export function Navigation() {
           </Link>
 
           {/* Navigation links */}
-          <div className="flex items-center space-x-1">
+          <div className="flex items-center space-x-3">
             {navigationItems.map((item) => (
               <Button
                 key={item.href}

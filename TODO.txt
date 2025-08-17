@@ -7,3 +7,5 @@
 When company gets marked as "INACTIVE", all company data gets automatically backed up into the SM server, if not available into cloud or doesn't work. Once company is deleted, data will be stored for 14 days, and then deleted permanently.
 
 make this part of a company backup, and when a company is backed up an AI (openAI) will run through the data and create a report over it
+
+add pending to users when created

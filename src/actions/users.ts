@@ -111,3 +111,44 @@ export async function updateUserRole(userId: string, role: "ADMIN" | "CLIENT") {
     },
   });
 }
+
+export async function deleteUser(userId: string) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    include: { company: true },
+  });
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  if (user.role === "ADMIN") {
+    throw new Error("You cannot delete an admin user!");
+  }
+
+  return await prisma.user.delete({
+    where: { id: userId },
+  });
+}
+
+export async function exportUserToUser(userId: string) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    include: {
+      company: true,
+      profile: true,
+    },
+  });
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  const userData = JSON.stringify(user, null, 2);
+  
+  return {
+    data: userData,
+    mimeType: "application/json",
+    fileName: `user-${user.name || user.email}-${new Date().toISOString().split('T')[0]}.json`,
+  };
+}

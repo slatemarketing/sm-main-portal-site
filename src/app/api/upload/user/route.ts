@@ -18,12 +18,14 @@ export async function POST(req: NextRequest) {
   const data = await req.json();
   const { searchParams } = new URL(req.url);
 
-  const removeCompany = searchParams.get("remove-company");
+  const removeUser = searchParams.get("remove-user");
 
-  let key = `incoming/${data.name}/${data.name}-${Date.now().toString()}.json`;
+  let key = `users/${data.name}-${data.id}/${
+    data.name
+  }-${Date.now().toString()}.json`;
 
-  if (removeCompany) {
-    key = `incoming/${data.name}/DELETION/${
+  if (removeUser) {
+    key = `users/${data.name}/DELETION/${
       data.name
     }-${Date.now().toString()}.json`;
     console.log("BACKUP TYPE: REMOVAL");

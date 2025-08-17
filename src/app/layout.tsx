@@ -6,6 +6,7 @@ import { Toaster } from "sonner";
 import { AuthProvider } from "@/components/auth/auth-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Footer from "@/components/footer";
+import { ThemeProvider } from "@/components/misc/theme-provider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,18 +29,25 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <TooltipProvider>
-          <AuthProvider>
-            <Toaster />
-            <Navigation />
-            <main>{children}</main>
-            <Footer />
-          </AuthProvider>
-        </TooltipProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <TooltipProvider>
+            <AuthProvider>
+              <Toaster />
+              <Navigation />
+              <main>{children}</main>
+              <Footer />
+            </AuthProvider>
+          </TooltipProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

@@ -1,10 +1,26 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { Separator } from "./ui/separator";
+import { useSession } from "@/lib/auth-client";
+import { isAdmin } from "@/lib/roles";
+import { User } from "@/generated/prisma";
+import { AuthenticatedOnly } from "./auth/role-guard";
+import { useSessionWithProfile } from "@/hooks/use-session-with-profile";
 
 export default function Footer() {
+  const { data: session, isPending } = useSessionWithProfile();
+
+  if (isPending) return <div>Loading...</div>;
+  if (!session) return <div>Not authenticated</div>;
+
+  const user = session.user;
+
+  const userIsAdmin = user && "role" in user && user.role === "ADMIN";
+
   return (
     <footer className="border-t bg-background/60">
       <div className="container mx-auto px-4 py-10">
@@ -28,14 +44,42 @@ export default function Footer() {
             <div className="font-medium">Company</div>
             <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
               <li>
-                <Link href="/about">Who we are</Link>
+                <Link href="/">Home</Link>
               </li>
-              <li>
-                <Link href="/features">Features</Link>
-              </li>
-              <li>
-                <Link href="/contact">Contact</Link>
-              </li>
+              <Separator className="w-1/3 bg-foreground/10" />
+              {userIsAdmin && (
+                <>
+                  <li>
+                    <Link href="/admin">Admin Panel</Link>
+                  </li>
+                  <li>
+                    <Link href="/admin/users">User Management</Link>
+                  </li>
+                  <li>
+                    <Link href="/admin/companies">Company Management</Link>
+                  </li>
+                  <Separator className="w-1/3 bg-foreground/10" />
+                </>
+              )}
+              {session.user && (
+                <>
+                  <li>
+                    <Link href="/dashboard">Dashboard</Link>
+                  </li>
+                  <li>
+                    <Link href="/profile">Profile</Link>
+                  </li>
+                  <li>
+                    <Link href="/invoices">Invoices</Link>
+                  </li>
+                  <li>
+                    <Link href="/settings">Settings</Link>
+                  </li>
+                </>
+              )}
+              <li>{/* <Link href="/about">Who we are</Link> */}</li>
+              <li>{/* <Link href="/features">Features</Link> */}</li>
+              <li>{/* <Link href="/contact">Contact</Link> */}</li>
             </ul>
           </div>
           <div>
